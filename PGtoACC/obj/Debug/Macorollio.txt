@@ -1,0 +1,578 @@
+﻿
+Sub Compact()
+RepairDatabase "D:\Работа\Работа с ЛАЭС\Командировка 2016\Работа с пересылками\Связь с postgres.accdb", "D:\Работа\Работа с ЛАЭС\Командировка 2016\Работа с пересылками\Backup.accdb"
+End Sub
+
+Function Send()
+
+Dim SCHEME(10) As String
+'Перечисляем схемы
+SCHEME(0) = "Схема|a260290338703446get"
+SCHEME(1) = "Таблица|Abonents"
+d SCHEME(), "localhost", "5439", "postgres", "postgres"
+
+End Function
+
+
+Function Show(ByRef s_and_t() As String)
+
+For i = 0 To 10
+MsgBox (s_and_t(i))
+Next
+
+End Function
+
+Function RepairDatabase(strSource As String, _
+        strDestination As String) As Boolean
+        ' Input values: the paths and file names of
+        ' the source and destination files.
+
+    ' Trap for errors.
+    On Error GoTo error_handler
+
+    ' Compact and repair the database. Use the return value of
+    ' the CompactRepair method to determine if the file was
+    ' successfully compacted.
+    RepairDatabase = _
+        Application.CompactRepair( _
+        LogFile:=True, _
+        SourceFile:=strSource, _
+        DestinationFile:=strDestination)
+
+    ' Reset the error trap and exit the function.
+    On Error GoTo 0
+    Exit Function
+
+' Return False if an error occurs.
+error_handler:
+    RepairDatabase = False
+
+End Function
+
+Sub d(ByRef schemes_and_tables() As String, Server As String, Port As String, Uid As String, Pwd As String)
+
+Dim db As Database ' объявление переменной типа БД
+Set db = CurrentDb() 'привязка к объектной переменной текущей базы данных
+
+Dim serverConn As String
+
+DoCmd.SetWarnings False
+
+
+'Строка связи
+serverConn = "DATABASE=getdb;" & _
+"SERVER=" & Server & ";PORT=" & Port & ";Uid=" & Uid & ";" & _
+"Pwd=" & Pwd & ";"
+
+Dim SCHEME(50) As String
+'Перечисляем схемы
+Dim i As Integer
+i = 0
+Do While schemes_and_tables(i) Like "Схема*"
+SCHEME(i) = Replace(schemes_and_tables(i), "Схема|", "")
+i = i + 1
+Loop
+
+'SCHEME(0) = "a260290338703446get"
+'SCHEME(1) = "ae613429596541854get"
+'SCHEME(2) = "b526745947807181get"
+'SCHEME(3) = "c2485043296429498get"
+'SCHEME(4) = "d769305054713560get"
+'SCHEME(5) = "e686181878568236get"
+'SCHEME(6) = "f7952415767822940get"
+'SCHEME(7) = "skusb_2015_03_1186081100988665get" 'это EM!
+
+Dim Tables(100) As String
+
+Dim j As Integer
+j = 0
+Do While schemes_and_tables(i) Like "Таблица*"
+Tables(j) = Replace(schemes_and_tables(i), "Таблица|", "")
+i = i + 1
+j = j + 1
+Loop
+
+
+'Перечисляем таблицы
+'Tables(0) = "abonents"
+'Tables(1) = "blocks"
+'Tables(2) = "bst"
+'Tables(3) = "connectors"
+'Tables(4) = "eascycle"
+'Tables(5) = "fbparameters"
+'Tables(6) = "infbport"
+'Tables(7) = "mechanics"
+'Tables(8) = "modules"
+'Tables(9) = "outfbport"
+'Tables(10) = "pageleft"
+'Tables(11) = "pageright"
+'Tables(12) = "tabqrel"
+'Tables(13) = "tabzrel"
+'Tables(14) = "pages"
+'Tables(15) = "functionpages"
+
+For i = 0 To 50
+If SCHEME(i) = "" Then
+Exit For
+End If
+
+For j = 0 To 100
+
+If Tables(j) = "" Then
+Exit For
+End If
+
+Dim RECORDSET As RECORDSET
+ZAPR = "SELECT * FROM " & SCHEME(i) & "_" & Tables(j)
+
+On Error GoTo DeleteTable_Err
+DoCmd.DeleteObject acTable = acDefault, SCHEME(i) & "_" & Tables(j)
+On Error GoTo 0
+'Вызываем процедуру создания временной связанной таблицы
+Link_ODBCTbl serverConn, SCHEME(i) & "." & Tables(j), SCHEME(i) & "_" & Tables(j) & "_Temp", db
+'Копируем временную связанную таблицу в таблицу
+ZAPR = "Select * into " & SCHEME(i) & "_" & Tables(j) & _
+" FROM " & SCHEME(i) & "_" & Tables(j) & "_Temp"
+DoCmd.RunSQL (ZAPR)
+'Удаляем временную связанную таблицу
+DoCmd.DeleteObject acTable = acDefault, SCHEME(i) & "_" & Tables(j) & "_Temp"
+'Меняем поля MEMO (Postgres - String) на VARCHAR
+ChangeMemo SCHEME(i) & "_" & Tables(j)
+
+If i = 0 Then
+ZAPR = "Select * into " & Tables(j) & _
+" FROM " & SCHEME(i) & "_" & Tables(j)
+Else
+ZAPR = "INSERT into " & Tables(j) & _
+" Select * FROM " & SCHEME(i) & "_" & Tables(j)
+End If
+
+DoCmd.RunSQL (ZAPR)
+
+On Error Resume Next
+
+If Tables(j) = "outfbport" And i = 0 Then
+ZAPR = "ALTER TABLE " & Tables(j) & " ADD fbport_description VARCHAR(255)"
+DoCmd.RunSQL (ZAPR)
+End If
+
+If Tables(j) = "pages" And i = 0 Then
+ZAPR = "ALTER TABLE " & Tables(j) & " ADD page_hashcode VARCHAR(255)"
+DoCmd.RunSQL (ZAPR)
+End If
+
+If i = 0 Then
+ZAPR = "ALTER TABLE " & Tables(j) & " ADD sctm_" & Tables(j) & " VARCHAR(255)"
+DoCmd.RunSQL (ZAPR)
+End If
+
+On Error GoTo 0
+
+Next j
+
+Next i
+
+'For j = 0 To 100
+'If Tables(j) = "" Then
+'Exit For
+'End If
+'ChangeMemo Tables(j)
+'Next
+
+Exit Sub
+
+DeleteTable_Err:
+
+Resume Next
+
+
+End Sub
+
+Private Sub Link_ODBCTbl(serverConn As String, rstrTblSrc As String, _
+                         rstrTblDest As String, db As Database)
+'Link_ODBCTbl.LogEvent "Entering " & APP_NAME & ": Form_Login.Link_ODBCTbbl(" & _
+'        rstrTblSrc & ")", etDebug
+
+'On Error GoTo Err_Handler
+
+'StartWork "Adding relation: " & rstrTblSrc
+
+    Dim tdf As TableDef
+    Dim connOptions As String
+    Dim myConn As String
+    Dim myLen As Integer
+    Dim bNoErr As Boolean
+
+    bNoErr = True
+
+    Set tdf = db.CreateTableDef(rstrTblDest)
+    ' don't need next line, as only called if doesn't exist locally
+    'db.TableDefs.Delete rstrTblDest
+    ' this is 1st error, as doesn't exist locally yet; maybe wrong key
+
+
+' The length of the connection string allowed is limited such that you can't
+' specify all of the PostgreSQL ODBC driver options as you normally would.
+' For those that want to do it normally, you are limited to somewhere between
+' 269 characters (works) and 274 (doesn't work). Using a dsn is not a workaround.
+'
+' ***WORKAROUND*** Tested Access 2000 on Win2k, PostgreSQL 7.1.3 on Red Hat 7.2
+'
+' The connection string begins as usual, for example:
+'
+'   "ODBC;DRIVER={PostgreSQL};DATABASE=database_name_to_connect_to;" & _
+'   "SERVER=ip_address_to_connect_to;PORT=5432;Uid=username_to_connect_as;" & _
+'   "Pwd=password_of_user;" & _
+'
+' For all other parameters, you must code them in the same way Access stores them
+' in the hidden MSysObjects table.  Here is a cross-reference table:
+'
+'   PG_ODBC_PARAMETER           ACCESS_PARAMETER
+'   *********************************************
+'   READONLY                    A0
+'   PROTOCOL                    A1
+'   FAKEOIDINDEX                A2  'A2 must be 0 unless A3=1
+'   SHOWOIDCOLUMN               A3
+'   ROWVERSIONING               A4
+'   SHOWSYSTEMTABLES            A5
+'   CONNSETTINGS                A6
+'   FETCH                       A7
+'   SOCKET                      A8
+'   UNKNOWNSIZES                A9  ' range [0-2]
+'   MAXVARCHARSIZE              B0
+'   MAXLONGVARCHARSIZE          B1
+'   DEBUG                       B2
+'   COMMLOG                     B3
+'   OPTIMIZER                   B4  ' note that 1 = _cancel_ generic optimizer...
+'   KSQO                        B5
+'   USEDECLAREFETCH             B6
+'   TEXTASLONGVARCHAR           B7
+'   UNKNOWNSASLONGVARCHAR       B8
+'   BOOLSASCHAR                 B9
+'   PARSE                       C0
+'   CANCELASFREESTMT            C1
+'   EXTRASYSTABLEPREFIXES       C2
+'
+' So the parameter part of the connection string might look like: '
+'   "A0=0;A1=6.4;A2=0;A3=0;A4=0;A5=0;A6=;A7=100;A8=4096;A9=0;" & _
+'   "B0=254;B1=8190;B2=0;B3=0;B4=1;B5=1;B6=0;B7=1;B8=0;B9=1;C0=0;C1=0;C2=dd_"
+'
+' Concatenating those four strings together will give you a working connection
+' string (but you may want to change the options specified).
+'
+' NOTES:
+'   `Disallow Premature` in driver dialog is not stored by Access.
+'   string must begin with `ODBC;` or you will get error
+'   `3170 Could not find installable ISAM`.
+
+'Debug.Print svr.Conn
+
+myConn = "ODBC;DSN=PostgreSQL35W;" & serverConn & _
+            "A0=1;A1=6.4;A2=0;A3=0;A4=0;A5=0;A6=;A7=100;A8=4096;A9=0;" & _
+            "B0=254;B1=8190;B2=0;B3=0;B4=1;B5=1;B6=0;B7=1;B8=0;B9=1;" & _
+            "C0=0;C1=0;C2=dd_"
+
+    tdf.Connect = myConn
+    tdf.SourceTableName = LCase(rstrTblSrc)
+    db.TableDefs.Append tdf
+    db.TableDefs.Refresh
+
+    ' If we made it this far without errors, table was linked...
+    If bNoErr Then
+'        LogEvent "Form_Login.Link_ODBCTbl: Linked new relation: " & _
+'                 rstrTblSrc, etDebug
+    End If
+
+    'Debug.Print "Linked new relation: " & rstrTblSrc ' Link new relation
+
+    Set tdf = Nothing
+
+Exit Sub
+
+Err_Handler:
+    'bNoErr = False
+    'Debug.Print Err.Number & " : " & Err.Description
+    'If Err.Number <> 0 Then LogError Err.Number, Err.Description, APP_NAME & _
+    '                                 ": Form_Login.Link_ODBCTbl"
+    Resume Next
+
+End Sub
+
+Private Sub UnLink_ODBCTbl(rstrTblName As String, db As Database)
+LogEvent "Entering " & APP_NAME & ": Form_Login.UnLink_ODBCTbbl", etDebug
+On Error GoTo Err_Handler
+
+    StartWork "Removing revoked relation: " & rstrTblName
+
+    ' Delete the revoked relation...that'll teach 'em not to get on my bad side
+    ' I only call this sub after verifying the relation exists locally, so I
+    ' don't check if it exists here prior to trying to delete it, however if you
+    ' aren't careful...
+    db.TableDefs.Delete rstrTblName
+    db.TableDefs.Refresh
+
+    Debug.Print "Removed revoked relation: " & rstrTblName
+
+Exit Sub
+
+Err_Handler:
+    Debug.Print Err.Number & " : " & Err.Description
+    If Err.Number <> 0 Then LogError Err.Number, Err.Description, APP_NAME & _
+                                     ": Form_Login.UnLink_ODBCTbl"
+    Resume Next
+
+End Sub
+
+
+
+
+Sub d_macro()
+
+Dim db As Database ' ?????????? ?????????? ???? ??
+Set db = CurrentDb() '???????? ? ????????? ?????????? ??????? ???? ??????
+
+Dim serverConn As String
+
+DoCmd.SetWarnings False
+
+
+'?????? ?????
+serverConn = "DATABASE=getdb;" & _
+"SERVER=10.13.236.62;PORT=5439;Uid=postgres;" & _
+"Pwd=postgres;"
+
+Dim SCHEME(10) As String
+'??????????? ?????
+SCHEME(0) = "a260290338703446get"
+SCHEME(1) = "ae613429596541854get"
+SCHEME(2) = "b526745947807181get"
+SCHEME(3) = "c2485043296429498get"
+SCHEME(4) = "d769305054713560get"
+SCHEME(5) = "e686181878568236get"
+SCHEME(6) = "f7952415767822940get"
+SCHEME(7) = "skusb_2015_03_1186081100988665get" '??? EM!
+
+Dim Tables(15) As String
+'??????????? ???????
+Tables(0) = "abonents"
+Tables(1) = "blocks"
+Tables(2) = "bst"
+Tables(3) = "connectors"
+Tables(4) = "eascycle"
+Tables(5) = "fbparameters"
+Tables(6) = "infbport"
+Tables(7) = "mechanics"
+Tables(8) = "modules"
+Tables(9) = "outfbport"
+Tables(10) = "pageleft"
+Tables(11) = "pageright"
+Tables(12) = "tabqrel"
+Tables(13) = "tabzrel"
+Tables(14) = "pages"
+Tables(15) = "functionpages"
+
+For i = 0 To 10
+
+If SCHEME(i) = "" Then
+Exit For
+End If
+
+For j = 0 To 15
+
+If Tables(j) = "" Then
+Exit For
+End If
+
+On Error GoTo DeleteTable_Err
+
+DoCmd.DeleteObject acTable = acDefault, SCHEME(i) & "_" & Tables(j)
+
+On Error GoTo 0
+
+
+Link_ODBCTbl_macro serverConn, SCHEME(i) & "." & Tables(j), SCHEME(i) & "_" & Tables(j), db
+
+
+If i = 0 Then
+ZAPR = "Select * into " & Tables(j) & _
+" FROM " & SCHEME(i) & "_" & Tables(j)
+Else
+ZAPR = "INSERT into " & Tables(j) & _
+" Select * FROM " & SCHEME(i) & "_" & Tables(j)
+End If
+
+DoCmd.RunSQL (ZAPR)
+
+If Tables(j) = "outfbport" And i = 0 Then
+ZAPR = "ALTER TABLE " & Tables(j) & " ADD fbport_description VARCHAR(255)"
+DoCmd.RunSQL (ZAPR)
+End If
+
+If Tables(j) = "pages" And i = 0 Then
+ZAPR = "ALTER TABLE " & Tables(j) & " ADD page_hashcode VARCHAR(255)"
+DoCmd.RunSQL (ZAPR)
+End If
+
+If Tables(j) = "pages" And i = 0 Then
+ZAPR = "ALTER TABLE " & Tables(j) & " ADD sctm_pages VARCHAR(255)"
+DoCmd.RunSQL (ZAPR)
+End If
+
+Next j
+
+Next i
+
+Exit Sub
+
+DeleteTable_Err:
+
+Resume Next
+
+
+End Sub
+
+Private Sub Link_ODBCTbl_macro(serverConn As String, rstrTblSrc As String, _
+                         rstrTblDest As String, db As Database)
+'Link_ODBCTbl.LogEvent "Entering " & APP_NAME & ": Form_Login.Link_ODBCTbbl(" & _
+'        rstrTblSrc & ")", etDebug
+
+
+'StartWork "Adding relation: " & rstrTblSrc
+
+    Dim tdf As TableDef
+    Dim connOptions As String
+    Dim myConn As String
+    Dim myLen As Integer
+    Dim bNoErr As Boolean
+
+    bNoErr = True
+
+    Set tdf = db.CreateTableDef(rstrTblDest)
+    ' don't need next line, as only called if doesn't exist locally
+    'db.TableDefs.Delete rstrTblDest
+    ' this is 1st error, as doesn't exist locally yet; maybe wrong key
+
+
+' The length of the connection string allowed is limited such that you can't
+' specify all of the PostgreSQL ODBC driver options as you normally would.
+' For those that want to do it normally, you are limited to somewhere between
+' 269 characters (works) and 274 (doesn't work). Using a dsn is not a workaround.
+'
+' ***WORKAROUND*** Tested Access 2000 on Win2k, PostgreSQL 7.1.3 on Red Hat 7.2
+'
+' The connection string begins as usual, for example:
+'
+'   "ODBC;DRIVER={PostgreSQL};DATABASE=database_name_to_connect_to;" & _
+'   "SERVER=ip_address_to_connect_to;PORT=5432;Uid=username_to_connect_as;" & _
+'   "Pwd=password_of_user;" & _
+'
+' For all other parameters, you must code them in the same way Access stores them
+' in the hidden MSysObjects table.  Here is a cross-reference table:
+'
+'   PG_ODBC_PARAMETER           ACCESS_PARAMETER
+'   *********************************************
+'   READONLY                    A0
+'   PROTOCOL                    A1
+'   FAKEOIDINDEX                A2  'A2 must be 0 unless A3=1
+'   SHOWOIDCOLUMN               A3
+'   ROWVERSIONING               A4
+'   SHOWSYSTEMTABLES            A5
+'   CONNSETTINGS                A6
+'   FETCH                       A7
+'   SOCKET                      A8
+'   UNKNOWNSIZES                A9  ' range [0-2]
+'   MAXVARCHARSIZE              B0
+'   MAXLONGVARCHARSIZE          B1
+'   DEBUG                       B2
+'   COMMLOG                     B3
+'   OPTIMIZER                   B4  ' note that 1 = _cancel_ generic optimizer...
+'   KSQO                        B5
+'   USEDECLAREFETCH             B6
+'   TEXTASLONGVARCHAR           B7
+'   UNKNOWNSASLONGVARCHAR       B8
+'   BOOLSASCHAR                 B9
+'   PARSE                       C0
+'   CANCELASFREESTMT            C1
+'   EXTRASYSTABLEPREFIXES       C2
+'
+' So the parameter part of the connection string might look like: '
+'   "A0=0;A1=6.4;A2=0;A3=0;A4=0;A5=0;A6=;A7=100;A8=4096;A9=0;" & _
+'   "B0=254;B1=8190;B2=0;B3=0;B4=1;B5=1;B6=0;B7=1;B8=0;B9=1;C0=0;C1=0;C2=dd_"
+'
+' Concatenating those four strings together will give you a working connection
+' string (but you may want to change the options specified).
+'
+' NOTES:
+'   `Disallow Premature` in driver dialog is not stored by Access.
+'   string must begin with `ODBC;` or you will get error
+'   `3170 Could not find installable ISAM`.
+
+'Debug.Print svr.Conn
+
+myConn = "ODBC;DSN=PostgreSQL35W;" & serverConn & _
+            "A0=1;A1=6.4;A2=0;A3=0;A4=0;A5=0;A6=;A7=100;A8=4096;A9=0;" & _
+            "B0=254;B1=8190;B2=0;B3=0;B4=1;B5=1;B6=0;B7=1;B8=0;B9=1;" & _
+            "C0=0;C1=0;C2=dd_"
+
+    tdf.Connect = myConn
+    tdf.SourceTableName = rstrTblSrc
+    db.TableDefs.Append tdf
+    db.TableDefs.Refresh
+
+    ' If we made it this far without errors, table was linked...
+    If bNoErr Then
+'        LogEvent "Form_Login.Link_ODBCTbl: Linked new relation: " & _
+'                 rstrTblSrc, etDebug
+    End If
+
+    'Debug.Print "Linked new relation: " & rstrTblSrc ' Link new relation
+
+    Set tdf = Nothing
+
+Exit Sub
+
+
+End Sub
+
+Function ChangeMemo(ByRef Table As String)
+
+    Dim db As Database ' объявление переменной типа БД
+    Set db = CurrentDb() 'привязка к объектной переменной текущей базы данных
+    Dim j As Integer
+    j = 0
+
+    Dim table_name(100) As String
+    
+    Dim rs As RECORDSET ' объявление объекта типа "записи" запроса
+    ' Определение запроса Проверка параметризации аналогового сигнала
+    ZAPR = "SELECT * FROM " & Table
+    
+    Set rs = db.OpenRecordset(ZAPR) ' Обратится к запросу
+    With rs ' работать по коротким именам в запросе
+        ' цикл перебора всех записей нужного типа
+        
+    For i = 0 To rs.Fields.Count - 1
+        If rs.Fields.Item(i).Type = 12 Then
+            table_name(j) = rs.Fields.Item(i).Name
+            j = j + 1
+        End If
+    Next
+    rs.Close
+    For i = 0 To j - 1
+        If table_name(i) = "" Then
+            Exit For
+        End If
+        
+        ZAPR = "ALTER TABLE " & Table & " ALTER COLUMN " & table_name(i) & " VARCHAR(255)"
+        DoCmd.RunSQL (ZAPR)
+    Next
+    
+        
+    End With
+End Function
+
+
+
+
+
+

@@ -1,0 +1,183 @@
+'Функция распределения таблиц в Access
+Sub export(ByRef Schemes() As String, Tables() As String, Server As String, Port As String, Uid As String, Pwd As String)
+
+Dim db As Database ' объявление переменной типа БД
+Set db = CurrentDb() 'привязка к объектной переменной текущей базы данных
+
+Dim serverConn As String
+
+DoCmd.SetWarnings False
+
+'Строка связи
+serverConn = "DATABASE=getdb;" & _
+"SERVER=" & Server & ";PORT=" & Port & ";Uid=" & Uid & ";" & _
+"Pwd=" & Pwd & ";"
+
+
+For i = 0 To UBound(Schemes)
+
+    For j = 0 To UBound(Tables)
+
+        'Удаляем таблицу, если существует
+        On Error GoTo DeleteTable_Err
+        DoCmd.DeleteObject acTable = acDefault, Schemes(i) & "_" & Tables(j)
+        On Error GoTo 0
+        'Вызываем процедуру создания временной связанной таблицы
+        Link_ODBCTbl serverConn, Schemes(i) & "." & Tables(j), Schemes(i) & "_" & Tables(j) & "_Temp", db
+        'Копируем временную связанную таблицу в таблицу
+        ZAPR = "Select * into " & Schemes(i) & "_" & Tables(j) & _
+        " FROM " & Schemes(i) & "_" & Tables(j) & "_Temp"
+        DoCmd.RunSQL (ZAPR)
+        'Удаляем временную связанную таблицу
+        DoCmd.DeleteObject acTable = acDefault, Schemes(i) & "_" & Tables(j) & "_Temp"
+        'Меняем поля MEMO (Postgres - String) на VARCHAR
+        ChangeMemo Schemes(i) & "_" & Tables(j)
+        'При первом проходе создаем таблицу, затем добавляем в созданную
+        If i = 0 Then
+            ZAPR = "Select * into " & Tables(j) & _
+            " FROM " & Schemes(i) & "_" & Tables(j)
+        Else
+            ZAPR = "INSERT into " & Tables(j) & _
+            " Select * FROM " & Schemes(i) & "_" & Tables(j)
+        End If
+        DoCmd.RunSQL (ZAPR)
+        
+        'В случае, если не существует полей, добавляем в таблицы
+        On Error Resume Next
+        If Tables(j) = "outfbport" And i = 0 Then
+            ZAPR = "ALTER TABLE " & Tables(j) & " ADD fbport_description VARCHAR(255)"
+            DoCmd.RunSQL (ZAPR)
+        End If
+        If Tables(j) = "pages" And i = 0 Then
+            ZAPR = "ALTER TABLE " & Tables(j) & " ADD page_hashcode VARCHAR(255)"
+            DoCmd.RunSQL (ZAPR)
+        End If
+        If i = 0 Then
+            ZAPR = "ALTER TABLE " & Tables(j) & " ADD sctm_" & Tables(j) & " VARCHAR(255)"
+            DoCmd.RunSQL (ZAPR)
+        End If
+        On Error GoTo 0
+    
+    Next j
+
+Next i
+
+Exit Sub
+
+DeleteTable_Err:
+
+Resume Next
+
+
+End Sub
+
+'Функция связи с Postgres и получения данных (взято с www.postgresql.org)
+Private Sub Link_ODBCTbl(serverConn As String, rstrTblSrc As String, _
+                         rstrTblDest As String, db As Database)
+    'Объявляем новую таблицу
+    Dim tdf As TableDef
+    'Объявляем Connectionstring
+    Dim myConn As String
+    'Создаем новую таблицу
+    Set tdf = db.CreateTableDef(rstrTblDest)
+
+' The length of the connection string allowed is limited such that you can't
+' specify all of the PostgreSQL ODBC driver options as you normally would.
+' For those that want to do it normally, you are limited to somewhere between
+' 269 characters (works) and 274 (doesn't work). Using a dsn is not a workaround.
+'
+'   PG_ODBC_PARAMETER           ACCESS_PARAMETER
+'   *********************************************
+'   READONLY                    A0
+'   PROTOCOL                    A1
+'   FAKEOIDINDEX                A2  'A2 must be 0 unless A3=1
+'   SHOWOIDCOLUMN               A3
+'   ROWVERSIONING               A4
+'   SHOWSYSTEMTABLES            A5
+'   CONNSETTINGS                A6
+'   FETCH                       A7
+'   SOCKET                      A8
+'   UNKNOWNSIZES                A9  ' range [0-2]
+'   MAXVARCHARSIZE              B0
+'   MAXLONGVARCHARSIZE          B1
+'   DEBUG                       B2
+'   COMMLOG                     B3
+'   OPTIMIZER                   B4  ' note that 1 = _cancel_ generic optimizer...
+'   KSQO                        B5
+'   USEDECLAREFETCH             B6
+'   TEXTASLONGVARCHAR           B7
+'   UNKNOWNSASLONGVARCHAR       B8
+'   BOOLSASCHAR                 B9
+'   PARSE                       C0
+'   CANCELASFREESTMT            C1
+'   EXTRASYSTABLEPREFIXES       C2
+'
+' Concatenating those four strings together will give you a working connection
+' string (but you may want to change the options specified).
+'
+' NOTES:
+'   `Disallow Premature` in driver dialog is not stored by Access.
+'   string must begin with `ODBC;` or you will get error
+'   `3170 Could not find installable ISAM`.
+
+'Строка соединения
+myConn = "ODBC;DSN=PostgreSQL35W;" & serverConn & _
+            "A0=1;A1=6.4;A2=0;A3=0;A4=0;A5=0;A6=;A7=100;A8=4096;A9=0;" & _
+            "B0=254;B1=8190;B2=0;B3=0;B4=1;B5=1;B6=0;B7=1;B8=0;B9=1;" & _
+            "C0=0;C1=0;C2=dd_"
+    'Соединяем
+    tdf.Connect = myConn
+    'Присоединяем таблицу из Postgres
+    tdf.SourceTableName = LCase(rstrTblSrc)
+    'Добавляем таблицу в базу данных
+    db.TableDefs.Append tdf
+    'Обновляем список таблиц
+    db.TableDefs.Refresh
+    'Освобождаем объект таблицы
+    Set tdf = Nothing
+
+Exit Sub
+
+    Resume Next
+
+End Sub
+
+
+'Функция изменения типа данных на Varchar
+Function ChangeMemo(ByRef Table As String)
+
+    Dim db As Database ' объявление переменной типа БД
+    Set db = CurrentDb() 'привязка к объектной переменной текущей базы данных
+    Dim j As Integer
+    j = 0
+
+    Dim table_name(100) As String
+    
+    Dim rs As RECORDSET ' объявление объекта типа "записи" запроса
+    ' Определение запроса Проверка параметризации аналогового сигнала
+    ZAPR = "SELECT * FROM " & Table
+    
+    Set rs = db.OpenRecordset(ZAPR) ' Обратится к запросу
+    With rs ' работать по коротким именам в запросе
+
+    'Цикл перебора всех полей типа 12-Memo на Varchar
+    For i = 0 To rs.Fields.Count - 1
+        If rs.Fields.Item(i).Type = 12 Then
+            table_name(j) = rs.Fields.Item(i).Name
+            j = j + 1
+        End If
+    Next
+    rs.Close
+    'Цикл замены типа всех полей
+    For i = 0 To j - 1
+        If table_name(i) = "" Then
+            Exit For
+        End If
+        ZAPR = "ALTER TABLE " & Table & " ALTER COLUMN " & table_name(i) & " VARCHAR(255)"
+        DoCmd.RunSQL (ZAPR)
+    Next
+    
+        
+    End With
+End Function
+

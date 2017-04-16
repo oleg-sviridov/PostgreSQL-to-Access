@@ -1,0 +1,8 @@
+D:\Программирование\PGtoACC\PGtoACC\PGtoAcc\bin\Debug\Партнер_шарп.exe.config
+D:\Программирование\PGtoACC\PGtoACC\PGtoAcc\obj\Debug\Interop.AccWizObjects.dll
+D:\Программирование\PGtoACC\PGtoACC\PGtoAcc\obj\Debug\Interop.ADODB.dll
+D:\Программирование\PGtoACC\PGtoACC\PGtoAcc\obj\Debug\Interop.ADOX.dll
+D:\Программирование\PGtoACC\PGtoACC\PGtoAcc\obj\Debug\Interop.VBIDE.dll
+D:\Программирование\PGtoACC\PGtoACC\PGtoAcc\obj\Debug\PGtoAcc.csproj.ResolveComReference.cache
+D:\Программирование\PGtoACC\PGtoACC\PGtoAcc\obj\Debug\Партнер_шарп.exe
+D:\Программирование\PGtoACC\PGtoACC\PGtoAcc\obj\Debug\Партнер_шарп.pdb
