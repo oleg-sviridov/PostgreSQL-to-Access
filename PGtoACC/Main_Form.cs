@@ -13,8 +13,6 @@ namespace WindowsFormsApplication1
         {
             InitializeComponent();
             // Инициализация элементов при первой загрузке формы
-            //Активируем все чекбоксы таблицы
-            DataBase_Name.Text = Directory.GetCurrentDirectory() + @"\База.accdb";
             //Активируем все чекбоксы со списком обрабатываемых таблиц
             for (int i = 0; i <= CheckedListBox_Tables.Items.Count - 1; i++)
                 CheckedListBox_Tables.SetItemChecked(i, true);
@@ -133,5 +131,9 @@ namespace WindowsFormsApplication1
 
         }
 
-}
+        private void Verify_Click(object sender, EventArgs e)
+        {
+
+        }
+    }
 }

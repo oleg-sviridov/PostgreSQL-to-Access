@@ -29,11 +29,9 @@
         private void InitializeComponent()
         {
             this.Work_Macro = new System.Windows.Forms.Button();
-            this.DataBase_Name = new System.Windows.Forms.TextBox();
             this.CheckedListBox_Tables = new System.Windows.Forms.CheckedListBox();
             this.TextBox_Scheme = new System.Windows.Forms.TextBox();
             this.ListBox_Schemes = new System.Windows.Forms.ListBox();
-            this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.Label_Port = new System.Windows.Forms.Label();
             this.Port = new System.Windows.Forms.TextBox();
@@ -48,26 +46,18 @@
             this.Button_Delete_All = new System.Windows.Forms.Button();
             this.Button_Delete = new System.Windows.Forms.Button();
             this.Button_Add = new System.Windows.Forms.Button();
-            this.Обзор = new System.Windows.Forms.Button();
             this.label5 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // Work_Macro
             // 
-            this.Work_Macro.Location = new System.Drawing.Point(309, 386);
+            this.Work_Macro.Location = new System.Drawing.Point(298, 298);
             this.Work_Macro.Name = "Work_Macro";
             this.Work_Macro.Size = new System.Drawing.Size(87, 40);
             this.Work_Macro.TabIndex = 0;
-            this.Work_Macro.Text = "Экспорт в Access Macro";
+            this.Work_Macro.Text = "Export to Access";
             this.Work_Macro.UseVisualStyleBackColor = true;
             this.Work_Macro.Click += new System.EventHandler(this.Work_Macro_Click);
-            // 
-            // DataBase_Name
-            // 
-            this.DataBase_Name.Location = new System.Drawing.Point(249, 270);
-            this.DataBase_Name.Name = "DataBase_Name";
-            this.DataBase_Name.Size = new System.Drawing.Size(177, 20);
-            this.DataBase_Name.TabIndex = 1;
             // 
             // CheckedListBox_Tables
             // 
@@ -101,7 +91,7 @@
             this.TextBox_Scheme.Name = "TextBox_Scheme";
             this.TextBox_Scheme.Size = new System.Drawing.Size(142, 20);
             this.TextBox_Scheme.TabIndex = 3;
-            this.TextBox_Scheme.Text = "Введите название схемы";
+            this.TextBox_Scheme.Text = "Type the scheme name";
             // 
             // ListBox_Schemes
             // 
@@ -112,36 +102,27 @@
             this.ListBox_Schemes.TabIndex = 4;
             this.ListBox_Schemes.SelectedIndexChanged += new System.EventHandler(this.ListBox_Schemes_SelectedIndexChanged);
             // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(246, 254);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(180, 13);
-            this.label1.TabIndex = 5;
-            this.label1.Text = "Выберите файл базы данных ЗЗИ";
-            // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(29, 308);
+            this.label2.Location = new System.Drawing.Point(20, 243);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(120, 13);
+            this.label2.Size = new System.Drawing.Size(112, 13);
             this.label2.TabIndex = 7;
-            this.label2.Text = "IP-адрес или \'localhost\'";
+            this.label2.Text = "IP-adress or \'localhost\'";
             // 
             // Label_Port
             // 
             this.Label_Port.AutoSize = true;
-            this.Label_Port.Location = new System.Drawing.Point(29, 331);
+            this.Label_Port.Location = new System.Drawing.Point(20, 266);
             this.Label_Port.Name = "Label_Port";
-            this.Label_Port.Size = new System.Drawing.Size(32, 13);
+            this.Label_Port.Size = new System.Drawing.Size(26, 13);
             this.Label_Port.TabIndex = 37;
-            this.Label_Port.Text = "Порт";
+            this.Label_Port.Text = "Port";
             // 
             // Port
             // 
-            this.Port.Location = new System.Drawing.Point(155, 331);
+            this.Port.Location = new System.Drawing.Point(146, 266);
             this.Port.Name = "Port";
             this.Port.Size = new System.Drawing.Size(75, 20);
             this.Port.TabIndex = 36;
@@ -150,24 +131,24 @@
             // Label3
             // 
             this.Label3.AutoSize = true;
-            this.Label3.Location = new System.Drawing.Point(29, 386);
+            this.Label3.Location = new System.Drawing.Point(20, 321);
             this.Label3.Name = "Label3";
-            this.Label3.Size = new System.Drawing.Size(45, 13);
+            this.Label3.Size = new System.Drawing.Size(53, 13);
             this.Label3.TabIndex = 35;
-            this.Label3.Text = "Пароль";
+            this.Label3.Text = "Password";
             // 
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(29, 357);
+            this.label4.Location = new System.Drawing.Point(20, 292);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(38, 13);
+            this.label4.Size = new System.Drawing.Size(33, 13);
             this.label4.TabIndex = 34;
-            this.label4.Text = "Логин";
+            this.label4.Text = "Login";
             // 
             // Pwd
             // 
-            this.Pwd.Location = new System.Drawing.Point(155, 383);
+            this.Pwd.Location = new System.Drawing.Point(146, 318);
             this.Pwd.Name = "Pwd";
             this.Pwd.Size = new System.Drawing.Size(75, 20);
             this.Pwd.TabIndex = 33;
@@ -175,7 +156,7 @@
             // 
             // Uid
             // 
-            this.Uid.Location = new System.Drawing.Point(155, 357);
+            this.Uid.Location = new System.Drawing.Point(146, 292);
             this.Uid.Name = "Uid";
             this.Uid.Size = new System.Drawing.Size(75, 20);
             this.Uid.TabIndex = 32;
@@ -183,7 +164,7 @@
             // 
             // Server
             // 
-            this.Server.Location = new System.Drawing.Point(155, 305);
+            this.Server.Location = new System.Drawing.Point(146, 240);
             this.Server.Name = "Server";
             this.Server.Size = new System.Drawing.Size(75, 20);
             this.Server.TabIndex = 31;
@@ -191,12 +172,13 @@
             // 
             // Verify
             // 
-            this.Verify.Location = new System.Drawing.Point(420, 386);
+            this.Verify.Location = new System.Drawing.Point(391, 298);
             this.Verify.Name = "Verify";
-            this.Verify.Size = new System.Drawing.Size(87, 40);
+            this.Verify.Size = new System.Drawing.Size(109, 40);
             this.Verify.TabIndex = 38;
-            this.Verify.Text = "Проведение верификации";
+            this.Verify.Text = "Verify the result database (optional)";
             this.Verify.UseVisualStyleBackColor = true;
+            this.Verify.Click += new System.EventHandler(this.Verify_Click);
             // 
             // Import
             // 
@@ -204,7 +186,7 @@
             this.Import.Name = "Import";
             this.Import.Size = new System.Drawing.Size(85, 23);
             this.Import.TabIndex = 43;
-            this.Import.Text = "Импорт";
+            this.Import.Text = "Import to txt";
             this.Import.UseVisualStyleBackColor = true;
             this.Import.Click += new System.EventHandler(this.Import_Click);
             // 
@@ -214,7 +196,7 @@
             this.Export.Name = "Export";
             this.Export.Size = new System.Drawing.Size(85, 23);
             this.Export.TabIndex = 42;
-            this.Export.Text = "Экспорт";
+            this.Export.Text = "Export from txt";
             this.Export.UseVisualStyleBackColor = true;
             this.Export.Click += new System.EventHandler(this.Export_Click);
             // 
@@ -224,7 +206,7 @@
             this.Button_Delete_All.Name = "Button_Delete_All";
             this.Button_Delete_All.Size = new System.Drawing.Size(85, 23);
             this.Button_Delete_All.TabIndex = 41;
-            this.Button_Delete_All.Text = "Удалить все";
+            this.Button_Delete_All.Text = "Delete all";
             this.Button_Delete_All.UseVisualStyleBackColor = true;
             this.Button_Delete_All.Click += new System.EventHandler(this.Button_Delete_All_Click);
             // 
@@ -235,7 +217,7 @@
             this.Button_Delete.Name = "Button_Delete";
             this.Button_Delete.Size = new System.Drawing.Size(85, 23);
             this.Button_Delete.TabIndex = 40;
-            this.Button_Delete.Text = "Удалить";
+            this.Button_Delete.Text = "Delete";
             this.Button_Delete.UseVisualStyleBackColor = true;
             this.Button_Delete.Click += new System.EventHandler(this.Button_Delete_Click);
             // 
@@ -245,35 +227,25 @@
             this.Button_Add.Name = "Button_Add";
             this.Button_Add.Size = new System.Drawing.Size(85, 23);
             this.Button_Add.TabIndex = 39;
-            this.Button_Add.Text = "Добавить";
+            this.Button_Add.Text = "Add";
             this.Button_Add.UseVisualStyleBackColor = true;
             this.Button_Add.Click += new System.EventHandler(this.Button_Add_Click);
-            // 
-            // Обзор
-            // 
-            this.Обзор.Location = new System.Drawing.Point(432, 269);
-            this.Обзор.Name = "Обзор";
-            this.Обзор.Size = new System.Drawing.Size(75, 21);
-            this.Обзор.TabIndex = 44;
-            this.Обзор.Text = "Обзор";
-            this.Обзор.UseVisualStyleBackColor = true;
             // 
             // label5
             // 
             this.label5.AutoSize = true;
             this.label5.Location = new System.Drawing.Point(273, 15);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(234, 13);
+            this.label5.Size = new System.Drawing.Size(179, 13);
             this.label5.TabIndex = 45;
-            this.label5.Text = "Выберите таблицы из списка для обработки";
+            this.label5.Text = "Choose the tables from the list below";
             // 
-            // Form1
+            // Main_Form
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(512, 436);
+            this.ClientSize = new System.Drawing.Size(512, 347);
             this.Controls.Add(this.label5);
-            this.Controls.Add(this.Обзор);
             this.Controls.Add(this.Import);
             this.Controls.Add(this.Export);
             this.Controls.Add(this.Button_Delete_All);
@@ -288,14 +260,12 @@
             this.Controls.Add(this.Uid);
             this.Controls.Add(this.Server);
             this.Controls.Add(this.label2);
-            this.Controls.Add(this.label1);
             this.Controls.Add(this.ListBox_Schemes);
             this.Controls.Add(this.TextBox_Scheme);
             this.Controls.Add(this.CheckedListBox_Tables);
-            this.Controls.Add(this.DataBase_Name);
             this.Controls.Add(this.Work_Macro);
-            this.Name = "Form1";
-            this.Text = "1";
+            this.Name = "Main_Form";
+            this.Text = "PGtoAcc";
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -304,11 +274,9 @@
         #endregion
 
         private System.Windows.Forms.Button Work_Macro;
-        private System.Windows.Forms.TextBox DataBase_Name;
         private System.Windows.Forms.CheckedListBox CheckedListBox_Tables;
         private System.Windows.Forms.TextBox TextBox_Scheme;
         private System.Windows.Forms.ListBox ListBox_Schemes;
-        private System.Windows.Forms.Label label1;
         internal System.Windows.Forms.Label label2;
         internal System.Windows.Forms.Label Label_Port;
         internal System.Windows.Forms.TextBox Port;
@@ -323,7 +291,6 @@
         internal System.Windows.Forms.Button Button_Delete_All;
         internal System.Windows.Forms.Button Button_Delete;
         internal System.Windows.Forms.Button Button_Add;
-        internal System.Windows.Forms.Button Обзор;
         internal System.Windows.Forms.Label label5;
     }
 }
