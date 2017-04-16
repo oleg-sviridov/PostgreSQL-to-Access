@@ -1,5 +1,5 @@
 # PostgreSQL-to-Access
-Project was made in purpose to export certain tables from different chemes of PostgreSQL database to MS Access.
+C# Project was made in purpose to export certain tables from different chemes of PostgreSQL database to MS Access.
 
 The application exports tables (the list is represented in CheckedListBox_Tables) from different chemes (the list is represented in ListBox_Schemes with the function of adding, removing schemes from the list, exporting and importing from/to txt file). Exporting tables from PostgreSQL to Access is made with VBA module which is created in working Access database by C# application. 
 
